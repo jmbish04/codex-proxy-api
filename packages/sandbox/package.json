@@ -1,0 +1,44 @@
+{
+  "name": "@cloudflare/sandbox",
+  "version": "0.4.14",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cloudflare/sandbox-sdk"
+  },
+  "description": "A sandboxed environment for running commands",
+  "type": "module",
+  "dependencies": {
+    "@cloudflare/containers": "^0.0.30"
+  },
+  "devDependencies": {
+    "@repo/shared": "*"
+  },
+  "tags": [
+    "sandbox",
+    "codegen",
+    "containers",
+    "cloudflare",
+    "durable objects"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsdown --config tsdown.config.ts",
+    "check": "biome check && npm run typecheck",
+    "fix": "biome check --fix && npm run typecheck",
+    "typecheck": "tsc --noEmit",
+    "docker:local": "cd ../.. && docker build -f packages/sandbox/Dockerfile --build-arg SANDBOX_VERSION=$npm_package_version -t cloudflare/sandbox-test:$npm_package_version .",
+    "docker:publish": "cd ../.. && docker buildx build --platform linux/amd64,linux/arm64 -f packages/sandbox/Dockerfile --build-arg SANDBOX_VERSION=$npm_package_version -t cloudflare/sandbox:$npm_package_version --push .",
+    "docker:publish:beta": "cd ../.. && docker buildx build --platform linux/amd64,linux/arm64 -f packages/sandbox/Dockerfile --build-arg SANDBOX_VERSION=$npm_package_version -t cloudflare/sandbox:$npm_package_version-beta --push .",
+    "test": "vitest run --config vitest.config.ts \"$@\"",
+    "test:e2e": "cd ../.. && vitest run --config vitest.e2e.config.ts \"$@\""
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
