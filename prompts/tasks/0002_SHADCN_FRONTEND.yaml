@@ -1,0 +1,153 @@
+# codex-tasks.yaml
+# Component-Level Codex Frontend Build Tasks for codex-proxy-api
+# Each task assumes codex cloud execution under the codex-proxy-api project root.
+
+tasks:
+
+  - name: build_AppLayout
+    description: >
+      Build the global AppLayout component wrapping sidebar, header, footer,
+      and main content. Handles route rendering and theming.
+    instructions: |
+      Create `/frontend/src/layout/AppLayout.tsx` using ShadCN UI + Tailwind.
+      Include:
+        - Persistent <Sidebar /> navigation
+        - Top bar with MCP and Codex Cloud status indicators
+        - Footer with version info (from /health)
+        - Responsive layout using grid or flexbox
+        - ThemeToggle integration
+      Integrate react-router-dom’s <Outlet /> for page routing.
+
+  - name: build_Sidebar
+    description: Sidebar navigation shell for all pages.
+    instructions: |
+      Build `/frontend/src/components/Sidebar.tsx` with shadcn/ui.
+      Include navigation items:
+        - Dashboard
+        - New Project
+        - Settings
+        - Docs
+      Show active state, icons (lucide-react), and collapse toggle.
+      Style to match Tailwind dark/light themes.
+      Use NavLink for routing.
+
+  - name: build_Dashboard
+    description: Dashboard page showing project list and Codex activity.
+    instructions: |
+      Implement `/frontend/src/pages/Dashboard.tsx`.
+      Include:
+        - Project table with columns: Name, Last Updated, Status, Actions.
+        - Quick actions: "New Project", "Trigger Codex Task", "Open GitHub".
+        - Activity feed (recent Codex jobs, status, runtime logs).
+        - MCP sync banner (color-coded by health).
+      Fetch data from `/gh/repos` and `/status` endpoints using SWR.
+      Use shadcn <Card>, <Table>, <Badge>, <Button> components.
+      Add <Skeleton> placeholders for loading states.
+
+  - name: build_ProjectsNew
+    description: New Project creation wizard.
+    instructions: |
+      Implement `/frontend/src/pages/ProjectsNew.tsx`.
+      Multi-step form (Tabs or stepper):
+        1. Repo Info (name, description, visibility)
+        2. Infra Selection (Durable Objects, D1, R2, etc.)
+        3. Prompt Editor
+        4. Review & Generate
+      On submit:
+        - POST to `/gh/repos`
+        - Save prompt to GitHub as /docs/PROMPT.md
+        - Call `/codex/generate`
+        - Stream job logs via `/status/:jobId`
+      Use localStorage to autosave input.
+      Display live job feedback with <TaskStream />.
+      Components used: <InfraSelector />, <PromptEditor />, <CodexConfigPreview />.
+
+  - name: build_Settings
+    description: Settings page for Codex Cloud & MCP management.
+    instructions: |
+      Implement `/frontend/src/pages/Settings.tsx`.
+      Tabs:
+        - MCP Connections: list from `/mcp/refresh`, refresh button.
+        - Codex Cloud Environment: show CLI binding status, API key masked.
+        - GitHub Integration: connected account/org, toggle gh CLI usage.
+        - UI Preferences: dark/light theme toggle.
+      Use <Card>, <Table>, <Button>, <Switch>, and <Input> from shadcn/ui.
+      Sync states via SWR.
+
+  - name: build_RepoCard
+    description: Reusable card for displaying GitHub repo details.
+    instructions: |
+      Create `/frontend/src/components/RepoCard.tsx`.
+      Props: { name, description, lastUpdated, status, url }.
+      Include "Open in GitHub" and "Generate with Codex" buttons.
+      Color badge by status (success, pending, error).
+
+  - name: build_InfraSelector
+    description: Grid selector for Cloudflare infra bindings.
+    instructions: |
+      Create `/frontend/src/components/InfraSelector.tsx`.
+      Checkboxes: Durable Objects, Agents SDK, Actor Framework, Workflows,
+      Queues, R2, D1, KV, Containers.
+      Include tooltip or info icon for each binding.
+      Output selected infra list to parent via callback.
+      Use ShadCN <Checkbox> and <Tooltip>.
+
+  - name: build_PromptEditor
+    description: Markdown/YAML prompt editor for Codex tasks.
+    instructions: |
+      Create `/frontend/src/components/PromptEditor.tsx`.
+      Use @monaco-editor/react (or fallback to <Textarea>).
+      Features:
+        - Markdown syntax highlighting
+        - Autosave to localStorage
+        - Preview tab
+        - Load default template from docs/codex/
+      Toolbar: Save, Clear, Load Example.
+
+  - name: build_TaskStream
+    description: Live log streaming panel for Codex job execution.
+    instructions: |
+      Create `/frontend/src/components/TaskStream.tsx`.
+      Connect to `/status/:jobId` via EventSource (SSE).
+      Render line-by-line stream with auto-scroll.
+      Color-code output (info, warning, error).
+      Add "Copy logs" and "Stop stream" buttons.
+
+  - name: build_McpStatus
+    description: MCP connection status display widget.
+    instructions: |
+      Create `/frontend/src/components/McpStatus.tsx`.
+      Fetch `/mcp/refresh` and show connected MCP servers (cloudflare-docs, exa, etc.).
+      Render color-coded dots by status (synced, stale, error).
+      Provide manual “Refresh MCP” button calling `/mcp/refresh` POST.
+      Tooltip shows endpoint URLs and last sync time.
+
+  - name: build_CodexConfigPreview
+    description: Live preview of wrangler.toml configuration.
+    instructions: |
+      Create `/frontend/src/components/CodexConfigPreview.tsx`.
+      Accept selected infra list as props.
+      Render live TOML preview with syntax highlighting.
+      Optional “Copy Config” button.
+      Include warning banner if Pages runtime toggled (should default to Workers).
+
+  - name: build_ThemeToggle
+    description: Dark/light mode toggle.
+    instructions: |
+      Create `/frontend/src/components/ThemeToggle.tsx`.
+      Use shadcn <Switch> or <Button>.
+      Persist theme to localStorage and apply via Tailwind dark mode class.
+
+---
+
+meta:
+  runtime: codex-cloud
+  repo: https://github.com/jmbish04/codex-proxy-api
+  base_dir: frontend/src/
+  ui_framework: shadcn/ui + TailwindCSS
+  router: react-router-dom
+  fetch_layer: SWR
+  build_command: pnpm --filter frontend build
+  deploy_target: ASSETS binding on Cloudflare Worker
+  default_theme: dark
+  compatibility: workers-only
