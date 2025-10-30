@@ -1,0 +1,168 @@
+# codex-tasks-backend.yaml
+# Backend Retrofit Tasks for codex-proxy-api Worker + Container
+# Each task runs in Codex Cloud using the codex-proxy-api repository as context.
+
+tasks:
+
+  - name: retrofit_worker_core
+    description: Core Hono app retrofit for codex-proxy-api Worker.
+    instructions: |
+      Create `/worker/src/index.ts` as the main entrypoint.
+      - Use Hono as the router.
+      - Register routes from /routes folder.
+      - Generate OpenAPI schema automatically.
+      - Serve `/health`, `/openapi.json`, `/openapi.yaml`.
+      - Mount static assets from `ASSETS` binding.
+      - Initialize MCP sync on startup by reading `.mcp.json`.
+      - Log version, commit hash, and active bindings at startup.
+      Ensure compatibility_date and durable bindings defined via Wrangler.
+
+  - name: retrofit_routes_health
+    description: Add /health route.
+    instructions: |
+      Create `/worker/src/routes/health.ts`.
+      Respond to GET `/health` with `{ ok: true, ts, version, codex: 'connected' }`.
+      Pull version from package.json and commit hash from env if available.
+
+  - name: retrofit_routes_openapi
+    description: OpenAPI generation endpoints.
+    instructions: |
+      Create `/worker/src/routes/openapi.ts`.
+      Import all registered routes and generate OpenAPI JSON/YAML using hono-openapi.
+      Serve endpoints `/openapi.json` and `/openapi.yaml`.
+      Cache output for performance but regenerate on route changes.
+
+  - name: retrofit_routes_github
+    description: GitHub repo management endpoints.
+    instructions: |
+      Create `/worker/src/routes/github.ts`.
+      Endpoints:
+        - `GET /gh/repos`: List repos (prefer gh CLI in container, fallback Octokit).
+        - `POST /gh/repos`: Create repo (name, visibility, description).
+      Use `/worker/src/lib/github.ts` helper for abstraction.
+      Normalize responses to { name, url, updatedAt, visibility }.
+
+  - name: retrofit_routes_codex
+    description: Codex Cloud code generation endpoint.
+    instructions: |
+      Create `/worker/src/routes/codex.ts`.
+      Endpoint: `POST /codex/generate`
+      Accept body:
+        { repo, infra: {...}, prompts: [string] }
+      Use Codex TypeScript SDK from `/packages/codex-typescript-sdk`.
+      Route generation through Codex CLI binding (env.CODEX_CLI).
+      Stream job logs to in-memory store or Durable Object.
+      Return jobId and initial status JSON.
+
+  - name: retrofit_routes_status
+    description: Job status endpoint.
+    instructions: |
+      Create `/worker/src/routes/status.ts`.
+      Endpoint: `GET /status/:jobId`.
+      Return job metadata and current progress logs.
+      Support SSE (Server-Sent Events) for live streaming.
+      Fetch from in-memory store or Durable Object storage.
+
+  - name: retrofit_mcp_sync
+    description: Implement MCP synchronization logic.
+    instructions: |
+      Create `/worker/src/lib/mcp.ts`.
+      Responsibilities:
+        - Read `.mcp.json` on startup.
+        - Parse "mcpServers" dictionary.
+        - Cache registry to `/.codex/mcp_registry.json`.
+        - Provide `/mcp/refresh` endpoint (manual trigger).
+        - Update `AGENTS.md` MCP section automatically.
+      Detect `.mcp.json` hash changes; refresh Codex MCP context when updated.
+
+  - name: retrofit_codex_adapter
+    description: Codex Cloud adapter for code generation tasks.
+    instructions: |
+      Create `/worker/src/lib/codex.ts`.
+      Wrapper around Codex TypeScript SDK and CLI binding.
+      Expose:
+        - `generateProject(repo, infra, prompts)`
+        - `getStatus(jobId)`
+      Enforce Codex Cloud-only policy (no external LLMs).
+      Auto-inject .mcp.json context for infra references (e.g., cloudflare-docs).
+      Log structured events for debugging.
+
+  - name: retrofit_github_helper
+    description: gh CLI and GitHub API helper abstraction.
+    instructions: |
+      Create `/worker/src/lib/github.ts`.
+      If gh CLI available (detect via execSync('which gh')):
+        - Use CLI commands: `gh repo list`, `gh repo create`, `gh api ...`.
+      Else:
+        - Use Octokit with GITHUB_TOKEN.
+      Handle rate limits, retries, and normalize outputs.
+
+  - name: retrofit_openapi_helper
+    description: Generate OpenAPI schema dynamically from Hono routes.
+    instructions: |
+      Create `/worker/src/lib/openapi.ts`.
+      Traverse all route modules and produce OpenAPIDocument object.
+      Include tags, operationIds, and schemas.
+      Export helper for use in /routes/openapi.ts.
+
+  - name: retrofit_infra_stubs
+    description: Infrastructure stub modules for each binding type.
+    instructions: |
+      Create `/worker/src/lib/infra/` folder with:
+        - d1.ts
+        - kv.ts
+        - r2.ts
+        - queues.ts
+        - durableObjects.ts
+        - agentsSdk.ts
+        - actorFramework.ts
+        - workflows.ts
+        - containers.ts
+      Each exports a register function and example usage comment.
+      Used by Codex generator for scaffolding.
+
+  - name: retrofit_logging
+    description: Structured logging utilities.
+    instructions: |
+      Create `/worker/src/lib/logging.ts`.
+      Export logger with correlation IDs and context tagging.
+      Use console.log/json + timestamp.
+      Include helper for job status streaming.
+
+  - name: retrofit_wranger_config
+    description: Setup wrangler.toml and environment bindings.
+    instructions: |
+      Create `/worker/wrangler.toml`.
+      Define:
+        - name = "codex-proxy-api"
+        - main = "src/index.ts"
+        - assets = "public"
+        - compatibility_date = today
+        - binding for CODEX_CLI
+        - optional bindings for D1, KV, R2, DO, etc.
+      Add `[vars] CODEX_ENV="cloud"`.
+      Create `.dev.vars` file for local testing (GITHUB_TOKEN, CODEX_API_KEY, etc).
+
+  - name: retrofit_docs
+    description: Documentation and governance files.
+    instructions: |
+      Update:
+        - `README.md`: project overview, dev setup, deploy instructions.
+        - `AGENTS.md`: Codex agent behavior, MCP servers, bindings summary.
+        - `docs/codex/`: workflow diagrams, API reference.
+      Ensure `AGENTS.md` includes “Connected MCP Servers” section auto-updated by mcp.ts.
+
+---
+
+meta:
+  runtime: codex-cloud
+  repo: https://github.com/jmbish04/codex-proxy-api
+  base_dir: worker/src/
+  framework: Cloudflare Workers + Hono
+  language: TypeScript
+  openapi: true
+  codex_binding: CODEX_CLI
+  mcp_source: .mcp.json
+  deploy_target: Workers (no Pages)
+  build_command: pnpm --filter worker build
+  deploy_command: wrangler deploy
