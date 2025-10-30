@@ -1,7 +1,18 @@
 {
-  "name": "sandbox",
-  "version": "0.0.0",
-  "description": "an api for computers",
+  "name": "codex-proxy-api",
+  "version": "1.0.0",
+  "description": "Codex Proxy API Worker + ShadCN frontend for Cloudflare Workers",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "tooling/*",
+    "tests/integration",
+    "examples/*",
+    "worker",
+    "frontend",
+    "src/*"
+  ],
   "scripts": {
     "typecheck": "turbo run typecheck",
     "format": "prettier --write .",
@@ -11,18 +22,12 @@
     "build:clean": "turbo run build --force",
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",
+    "migrate:local": "wrangler d1 execute codex_proxy_db --local --file=./migrations/0001_init.sql",
+    "migrate:remote": "wrangler d1 execute codex_proxy_db --remote --file=./migrations/0001_init.sql",
+    "deploy": "npm run build && npm run migrate:remote && wrangler deploy --env production",
+    "deploy:staging": "npm run build && npm run migrate:remote && wrangler deploy --env staging",
     "docker:rebuild": "npm run build:clean && npm run docker:local -w @cloudflare/sandbox"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
-  "workspaces": [
-    "packages/*",
-    "tooling/*",
-    "tests/integration",
-    "examples/*"
-  ],
   "devDependencies": {
     "@biomejs/biome": "^2.3.2",
     "@changesets/changelog-github": "^0.5.1",
@@ -53,6 +58,5 @@
     "wrangler": "^4.45.2",
     "ws": "^8.18.3"
   },
-  "private": true,
   "packageManager": "npm@11.6.2"
 }
