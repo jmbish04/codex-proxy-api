@@ -33,7 +33,8 @@
     {
       "binding": "DB",
       "database_name": "codex-proxy",
-      "database_id": "dd7c65a3-c0ea-4cff-9f76-c40eeadea9fe"
+      "database_id": "dd7c65a3-c0ea-4cff-9f76-c40eeadea9fe",
+      "migrations_dir": "migrations"
     }
   ],
 
