@@ -1,0 +1,114 @@
+# codex.toml
+# Main configuration for Codex Cloud project
+# Worker name: codex-proxy-api
+
+[project]
+name = "codex-proxy-api"
+description = "Cloudflare Worker container proxy API for Codex Cloud"
+type = "cloudflare-worker"
+entry = "src/index.ts"
+compatibility_date = "2025-10-30"
+
+# ===================================================================
+# Environment & Deployment
+# ===================================================================
+[deploy]
+account_id = "YOUR_CLOUDFLARE_ACCOUNT_ID"
+main_worker = "codex-proxy-api"
+zone_id = "YOUR_ZONE_ID"
+route = "https://codex.yourdomain.com/*"
+
+[build]
+command = "npm run build"
+
+[vars]
+ENV = "production"
+LOG_LEVEL = "info"
+
+# ===================================================================
+# MCP SERVER CONFIGURATIONS
+# These can auto-sync with .mcp.json if present.
+# ===================================================================
+
+[mcp_servers]
+# Cloudflare Documentation MCP
+[mcp_servers.cloudflare-docs]
+type = "http"
+url = "https://docs.mcp.cloudflare.com/mcp"
+
+# Cloudflare Workers MCP
+[mcp_servers.cloudflare-workers]
+type = "http"
+url = "https://workers.mcp.cloudflare.com/mcp"
+
+# shadcn MCP for UI scaffolding & component automation
+[mcp_servers.shadcn]
+command = "npx"
+args = ["shadcn@latest", "mcp"]
+
+# Optional: Exa for AI-powered context search (if you use exa.ai)
+[mcp_servers.exa]
+type = "http"
+url = "https://mcp.exa.ai/mcp"
+
+# ===================================================================
+# Bindings
+# ===================================================================
+[[kv_namespaces]]
+binding = "CODEX_KV"
+id = "YOUR_KV_NAMESPACE_ID"
+
+[[d1_databases]]
+binding = "CODEX_D1"
+database_name = "codex"
+database_id = "YOUR_D1_DB_ID"
+
+[[r2_buckets]]
+binding = "CODEX_R2"
+bucket_name = "codex-artifacts"
+
+[[ai]]
+binding = "AI"
+service = "workers-ai"
+
+[[vectorize]]
+binding = "VECTORS"
+index_name = "codex-embeddings"
+
+# ===================================================================
+# Integrations & MCP Sync
+# ===================================================================
+
+[sync]
+mcp_json_path = "./.mcp.json"
+auto_update = true
+on_update = "rebuild"  # options: rebuild | restart | ignore
+
+# ===================================================================
+# Developer Experience
+# ===================================================================
+[dev]
+port = 8787
+local_mcp = true
+auto_reload = true
+hot_reload = true
+log_requests = true
+
+# ===================================================================
+# Security
+# ===================================================================
+[security]
+verify_mcp_tls = true
+sanitize_inputs = true
+enforce_cors = true
+
+# ===================================================================
+# Shadcn UI Integration (optional)
+# ===================================================================
+[frontend]
+framework = "react"
+ui = "shadcn"
+dashboard_url = "/dashboard"
+new_project_url = "/projects/new"
+settings_url = "/settings"
+theme = "dark"
