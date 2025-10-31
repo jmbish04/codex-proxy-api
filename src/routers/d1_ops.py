@@ -101,7 +101,7 @@ async def list_rows(
 async def get_row(table: str, item_id: str, request: Request):
     env = request.scope["env"]
     client = D1Client(env.DB)
-    _ensure_table(table)
+    get_table_config(table)
     row = await client.fetch_one(queries.select_by_id(table), item_id)
     if not row:
         raise HTTPException(status_code=404, detail="Record not found")
