@@ -31,7 +31,7 @@ class TessieService:
         query: Optional[Dict[str, Any]] = None,
         body: Optional[Any] = None,
     ) -> Dict[str, Any]:
-        url = f"{BASE_URL}/{path.lstrip('/') }"
+        url = f"{BASE_URL}/{path.lstrip('/')}"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
