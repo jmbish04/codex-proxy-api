@@ -40,5 +40,6 @@ class Default(WorkerEntrypoint):
             console.log(f"Queue message received: {message.id}")
             try:
                 await handle_queue_message(message, env)
-            finally:
                 message.ack()
+            except Exception as e:
+                console.error(f"Error processing queue message {message.id}: {e}")
