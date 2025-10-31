@@ -1,0 +1,59 @@
+name = "codex-proxy-api"
+main = "src/index.ts"
+compatibility_date = "2025-03-07"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[[kv_namespaces]]
+binding = "KV"
+id = "2d718af1fa914b91b351cf448da32137"
+
+[[d1_databases]]
+binding = "codex_proxy_db"
+database_name = "codex_proxy_db"
+database_id = "dd7c65a3-c0ea-4cff-9f76-c40eeadea9fe"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "codex-proxy"
+
+[[queues.producers]]
+binding = "QUEUE"
+queue = "codex-tasks"
+
+[[queues.consumers]]
+queue = "codex-tasks"
+script_name = "codex-proxy-api"
+queue_id = "419c6b4432284df19edd9c460187cb69"
+
+[[workflows]]
+binding = "WORKFLOW"
+workflow_name = "codex-proxy"
+
+[assets]
+binding = "ASSETS"
+directory = "./public"
+
+[vars]
+ENV = "production"
+LOG_LEVEL = "info"
+
+[durable_objects]
+bindings = [
+  { name = "Sandbox", class_name = "Sandbox" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Sandbox"]
+
+[[unsafe.bindings]]
+name = "Sandbox"
+type = "container"
+class_name = "Sandbox"
+image = "./Dockerfile"
+instance_type = "basic"
