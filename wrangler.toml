@@ -1,59 +1,116 @@
+# --- Worker Configuration ---
+# 'name' is the name of your Worker script.
 name = "codex-proxy-api"
+# 'main' is the entrypoint file for your Worker (e.g., your TypeScript/JavaScript code).
 main = "src/index.ts"
+# 'compatibility_date' locks your Worker to a specific version of the Workers runtime API.
 compatibility_date = "2025-03-07"
+# 'compatibility_flags' enable new or experimental runtime features. "nodejs_compat" adds support for Node.js APIs.
 compatibility_flags = ["nodejs_compat"]
 
+# --- Observability ---
+# This section enables observability and tracing for your Worker.
 [observability]
 enabled = true
 head_sampling_rate = 1
 
+# --- KV (Key-Value) Binding ---
+# Binds a Workers KV namespace to your Worker.
+# 'binding' is the variable name you will use in your code (e.g., `env.KV`).
+# 'id' is the unique ID of the KV namespace you created in the Cloudflare dashboard.
 [[kv_namespaces]]
 binding = "KV"
 id = "2d718af1fa914b91b351cf448da32137"
 
+# --- D1 (Database) Binding ---
+# Binds a D1 SQL database to your Worker.
+# 'binding' is the variable name you will use in your code (e.g., `env.codex_proxy_db`).
+# 'database_name' and 'database_id' identify the D1 database.
+# 'migrations_dir' points to the folder containing your SQL migration files.
 [[d1_databases]]
 binding = "codex_proxy_db"
 database_name = "codex_proxy_db"
 database_id = "dd7c65a3-c0ea-4cff-9f76-c40eeadea9fe"
 migrations_dir = "migrations"
 
+# --- R2 (Object Storage) Binding ---
+# Binds an R2 bucket (for S3-compatible object storage) to your Worker.
+# 'binding' is the variable name you will use in your code (e.g., `env.BUCKET`).
+# 'bucket_name' is the name of the R2 bucket.
 [[r2_buckets]]
 binding = "BUCKET"
 bucket_name = "codex-proxy"
 
+# --- Queues Producer Binding ---
+# Binds a Cloudflare Queue for *sending* messages.
+# 'binding' is the variable name you will use in your code to send messages (e.g., `env.QUEUE.send()`).
+# 'queue' is the name of the queue.
 [[queues.producers]]
 binding = "QUEUE"
 queue = "codex-tasks"
 
+# --- Queues Consumer Configuration ---
+# Configures this Worker to *receive* messages from a queue.
+# This doesn't create a binding, but rather triggers your Worker's `queue()` handler.
 [[queues.consumers]]
 queue = "codex-tasks"
 script_name = "codex-proxy-api"
 queue_id = "419c6b4432284df19edd9c460187cb69"
 
+# --- Workflows Binding ---
+# Binds a Cloudflare Workflow, allowing your Worker to trigger and interact with complex, stateful workflows.
+# 'binding' is the variable name you will use in your code (e.g., `env.WORKFLOW`).
+# 'workflow_name' is the name of the workflow.
 [[workflows]]
 binding = "WORKFLOW"
 workflow_name = "codex-proxy"
 
+# --- Static Assets ---
+# Configures your Worker to serve a directory of static files (like HTML, CSS, JS).
+# 'binding' is the variable name for the asset service (if you need it, often unused for basic sites).
+# 'directory' is the local folder containing your static files.
 [assets]
 binding = "ASSETS"
 directory = "./public"
 
+# --- Environment Variables ---
+# Defines environment variables that will be available in your Worker code via the `env` object.
 [vars]
 ENV = "production"
 LOG_LEVEL = "info"
 
+# --- Durable Object (DO) Binding ---
+# This binding allows your Worker to *find and communicate with* an instance of a Durable Object class.
+# 'name' is the variable name you will use in your code to get a DO stub (e.g., `env.codexContainer`).
+# 'class_name' is the name of the JavaScript/TypeScript class in your code that defines the DO.
 [durable_objects]
 bindings = [
-  { name = "Sandbox", class_name = "Sandbox" }
+  { name = "codexContainer", class_name = "codexContainer" }
 ]
 
+# --- DO Migration ---
+# This section tells Wrangler to *create* the Durable Object class on the Cloudflare platform.
+# 'tag' is a unique version for this migration.
+# 'new_sqlite_classes' lists the DO classes that should be created with an embedded SQLite backend.
 [[migrations]]
 tag = "v1"
-new_sqlite_classes = ["Sandbox"]
+new_sqlite_classes = ["codexContainer"]
 
-[[unsafe.bindings]]
-name = "Sandbox"
-type = "container"
-class_name = "Sandbox"
+# --- Container Configuration ---
+# This is the new, standard way to define a Container-enabled Durable Object.
+# It links the DO class "codexContainer" (from above) to a container image.
+# The 'codexContainer' DO class can now start and control this container.
+# 'image' points to the Dockerfile to build the container.
+# 'class_name' is the DO class that will *control* this container. It must match a class from `[durable_objects]`.
+# 'name' is an internal name for the container definition.
+[[containers]]
 image = "./Dockerfile"
-instance_type = "basic"
+class_name = "codexContainer"
+name = "codex-container"
+max_instances = 2
+
+# --- Workers AI Binding ---
+# Binds the Cloudflare Workers AI service to your Worker.
+# 'binding' is the variable name you will use in your code to access AI models (e.g., `env.AI`).
+[ai]
+binding = "AI"
