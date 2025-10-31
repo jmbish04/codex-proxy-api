@@ -19,7 +19,7 @@ async def log_request(request: Any, response: Any, env: Any) -> None:
 
     payload = {
         "id": str(uuid.uuid4()),
-        "route": getattr(request, "url", getattr(request, "path", "")),
+        "route": str(getattr(request, "url", getattr(request, "path", ""))),
         "actor": headers.get("cf-connecting-ip"),
         "request_id": headers.get("cf-ray"),
         "level": "INFO" if status and status < 500 else "ERROR",
