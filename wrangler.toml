@@ -1,0 +1,25 @@
+name = "core-tessie-api"
+main = "src/main.py:Default"
+compatibility_date = "2025-10-30"
+compatibility_flags = ["python_workers"]
+
+[triggers]
+crons = ["0 */4 * * *"]
+
+[vars]
+CORS_ALLOWED_ORIGINS = "http://localhost:3000,https://your-prod-domain.com"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tessie-db"
+database_id = "<your-d1-db-id>"
+
+[ai]
+binding = "WORKERS_AI"
+
+[[queues.producers]]
+queue = "core-tessie-queue"
+binding = "CORE_TESSIE_QUEUE"
+
+[[queues.consumers]]
+queue = "core-tessie-queue"

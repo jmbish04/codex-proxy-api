@@ -1,68 +1,110 @@
--- ==========================================
--- D1 Initial Schema Migration
--- ==========================================
-
--- App Metadata
-CREATE TABLE IF NOT EXISTS app_meta (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  key TEXT UNIQUE NOT NULL,
-  value TEXT,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS vehicles (
+    id TEXT PRIMARY KEY,
+    vin TEXT,
+    display_name TEXT,
+    data TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR IGNORE INTO app_meta (key, value) VALUES ('schema_version', '0001_init');
-
--- Users / Profiles (for settings, ownership, etc.)
-CREATE TABLE IF NOT EXISTS users (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  email TEXT UNIQUE,
-  avatar_url TEXT,
-  role TEXT DEFAULT 'user',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS vehicle_settings (
+    id TEXT PRIMARY KEY,
+    vehicle_id TEXT,
+    data TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
--- Settings (key/value config for Codex + MCP sync)
-CREATE TABLE IF NOT EXISTS settings (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  key TEXT UNIQUE NOT NULL,
-  value TEXT,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS charges (
+    id TEXT PRIMARY KEY,
+    vehicle_id TEXT,
+    battery_level REAL,
+    charge_energy_added REAL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
--- Projects (frontend dashboard view)
-CREATE TABLE IF NOT EXISTS projects (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  repo_url TEXT,
-  infra TEXT,
-  status TEXT DEFAULT 'initialized',
-  prompt_path TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS drives (
+    id TEXT PRIMARY KEY,
+    vehicle_id TEXT,
+    distance_miles REAL,
+    duration_seconds INTEGER,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
--- Codex Job Status / Logs
-CREATE TABLE IF NOT EXISTS codex_jobs (
-  id TEXT PRIMARY KEY,
-  project_id TEXT NOT NULL,
-  status TEXT DEFAULT 'pending',
-  logs TEXT,
-  started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  completed_at DATETIME,
-  FOREIGN KEY (project_id) REFERENCES projects (id)
+CREATE TABLE IF NOT EXISTS climates (
+    id TEXT PRIMARY KEY,
+    vehicle_id TEXT,
+    inside_temp_c REAL,
+    outside_temp_c REAL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
--- MCP Servers Cache
-CREATE TABLE IF NOT EXISTS mcp_registry (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
-  type TEXT,
-  url TEXT,
-  last_sync DATETIME,
-  status TEXT DEFAULT 'unknown'
+CREATE TABLE IF NOT EXISTS software_updates (
+    id TEXT PRIMARY KEY,
+    vehicle_id TEXT,
+    version TEXT,
+    status TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
--- Basic seed
-INSERT OR IGNORE INTO settings (key, value) VALUES ('theme', 'dark');
-INSERT OR IGNORE INTO settings (key, value) VALUES ('auto_deploy', 'true');
+CREATE TABLE IF NOT EXISTS tessie_raw (
+    id TEXT PRIMARY KEY,
+    vehicle_id TEXT,
+    endpoint TEXT,
+    payload TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sync_runs (
+    id TEXT PRIMARY KEY,
+    status TEXT,
+    started_at TEXT,
+    finished_at TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS energy_reports (
+    id TEXT PRIMARY KEY,
+    vehicle_id TEXT,
+    total_energy_added REAL,
+    average_energy_added REAL,
+    samples INTEGER,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS logs (
+    id TEXT PRIMARY KEY,
+    route TEXT,
+    actor TEXT,
+    request_id TEXT,
+    level TEXT,
+    message TEXT,
+    payload TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS agent_messages (
+    id TEXT PRIMARY KEY,
+    role TEXT,
+    content TEXT,
+    metadata TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS agent_actions (
+    id TEXT PRIMARY KEY,
+    type TEXT,
+    payload TEXT,
+    status TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
